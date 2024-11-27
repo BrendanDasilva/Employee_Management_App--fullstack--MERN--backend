@@ -1,39 +1,38 @@
 require("dotenv").config({ path: "./config.env" });
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const path = require("path");
 const app = express();
 
-// CORS Configuration
+// Allowed origins for CORS
 const allowedOrigins = [
   "https://comp3123-101447806-frontend-cb4568212bc5.herokuapp.com", // Deployed frontend URL
   "http://localhost:3001", // Local frontend for development
 ];
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true); // Allow requests from whitelisted origins
-    } else {
-      console.log(`Blocked by CORS: ${origin}`); // Log blocked origins for debugging
-      callback(new Error("CORS policy: This origin is not allowed."));
+// Custom CORS middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, OPTIONS"
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, x-requested-with, Origin, Accept"
+    );
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    if (req.method === "OPTIONS") {
+      return res.status(204).end(); // Respond OK to preflight requests
     }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "x-requested-with",
-    "Origin",
-    "Accept",
-  ], // Allowed headers
-  credentials: true, // Allow cookies and credentials
-};
-
-// Apply CORS middleware at the top
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Handle preflight requests for all routes
+    next(); // Proceed to the next middleware for other methods
+  } else {
+    console.log(`Blocked by CORS: ${origin}`);
+    res.status(403).json({ message: "CORS policy: Origin not allowed." });
+  }
+});
 
 // Middleware
 app.use(express.json());
@@ -60,7 +59,7 @@ app.use("/api/v1/emp", employeeRoutes);
 
 app.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.url}`);
-  console.log(`Incoming request from origin: ${req.headers.origin}`);
+  console.log(`Origin: ${req.headers.origin}`);
   next();
 });
 
