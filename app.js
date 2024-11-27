@@ -1,6 +1,7 @@
 require("dotenv").config({ path: "./config.env" });
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 const path = require("path");
 const app = express();
 
@@ -10,29 +11,27 @@ const allowedOrigins = [
   "http://localhost:3001", // Local frontend for development
 ];
 
-// Custom CORS middleware
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin) || !origin) {
-    res.setHeader("Access-Control-Allow-Origin", origin || "*");
-    res.setHeader(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, DELETE, OPTIONS"
-    );
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, x-requested-with, Origin, Accept"
-    );
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    if (req.method === "OPTIONS") {
-      return res.status(204).end(); // Respond OK to preflight requests
+// CORS Configuration
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true); // Allow requests from whitelisted origins
+    } else {
+      console.log(`Blocked by CORS: ${origin}`);
+      callback(new Error("CORS policy: This origin is not allowed."));
     }
-    next(); // Proceed to the next middleware for other methods
-  } else {
-    console.log(`Blocked by CORS: ${origin}`);
-    res.status(403).json({ message: "CORS policy: Origin not allowed." });
-  }
-});
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "x-requested-with",
+    "Origin",
+    "Accept",
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200, // Fallback for legacy browsers
+};
 
 // Middleware
 app.use(express.json());
@@ -47,22 +46,22 @@ mongoose
   .catch((err) => console.error("MongoDB connection error:", err));
 
 // API Routes
-app.get("/", (req, res) => {
+const userRoutes = require("./routes/user");
+const employeeRoutes = require("./routes/employee");
+
+// Enable CORS Preflight Requests for Specific Routes
+app.options("/api/v1/user/*", cors(corsOptions)); // Enable preflight for user routes
+app.options("/api/v1/emp/*", cors(corsOptions)); // Enable preflight for employee routes
+
+// Define Routes with CORS Enabled
+app.use("/api/v1/user", cors(corsOptions), userRoutes);
+app.use("/api/v1/emp", cors(corsOptions), employeeRoutes);
+
+// Root Route
+app.get("/", cors(corsOptions), (req, res) => {
   res.send("Backend is running. Use /api/v1/user or other API routes.");
 });
 
-const userRoutes = require("./routes/user");
-app.use("/api/v1/user", userRoutes);
-
-const employeeRoutes = require("./routes/employee");
-app.use("/api/v1/emp", employeeRoutes);
-
-app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.url}`);
-  console.log(`Origin: ${req.headers.origin}`);
-  next();
-});
-
-// Start the server
+// Start the Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
