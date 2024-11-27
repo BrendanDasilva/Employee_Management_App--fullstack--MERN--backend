@@ -20,18 +20,23 @@ const corsOptions = {
       callback(null, true);
     } else {
       console.log(`Blocked by CORS: ${origin}`); // Debugging CORS issues
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error("CORS policy: This origin is not allowed."));
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
-  allowedHeaders: ["Content-Type", "Authorization"], // Required headers
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "x-requested-with",
+    "Origin",
+    "Accept",
+  ], // Required headers
   credentials: true, // Allow cookies and credentials
 };
 
+// Ensure CORS middleware is loaded first
 app.use(cors(corsOptions));
-
-// Preflight Request Handling
-app.options("*", cors(corsOptions)); // Handle preflight requests for all routes
+app.options("*", cors(corsOptions)); // Handle preflight requests
 
 // MongoDB Connection
 mongoose
@@ -55,6 +60,7 @@ app.use("/api/v1/emp", employeeRoutes);
 
 app.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.url}`);
+  console.log(`Incoming request from origin: ${req.headers.origin}`);
   next();
 });
 
