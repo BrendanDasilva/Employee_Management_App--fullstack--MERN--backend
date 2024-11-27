@@ -5,9 +5,6 @@ const cors = require("cors");
 const path = require("path");
 const app = express();
 
-// Middleware
-app.use(express.json());
-
 // CORS Configuration
 const allowedOrigins = [
   "https://comp3123-101447806-frontend-cb4568212bc5.herokuapp.com", // Deployed frontend URL
@@ -17,9 +14,9 @@ const allowedOrigins = [
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+      callback(null, true); // Allow requests from whitelisted origins
     } else {
-      console.log(`Blocked by CORS: ${origin}`); // Debugging CORS issues
+      console.log(`Blocked by CORS: ${origin}`); // Log blocked origins for debugging
       callback(new Error("CORS policy: This origin is not allowed."));
     }
   },
@@ -30,13 +27,16 @@ const corsOptions = {
     "x-requested-with",
     "Origin",
     "Accept",
-  ], // Required headers
+  ], // Allowed headers
   credentials: true, // Allow cookies and credentials
 };
 
-// Ensure CORS middleware is loaded first
+// Apply CORS middleware at the top
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Handle preflight requests
+app.options("*", cors(corsOptions)); // Handle preflight requests for all routes
+
+// Middleware
+app.use(express.json());
 
 // MongoDB Connection
 mongoose
