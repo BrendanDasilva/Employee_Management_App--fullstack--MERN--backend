@@ -53,13 +53,6 @@ app.use("/api/v1/user", userRoutes);
 const employeeRoutes = require("./routes/employee");
 app.use("/api/v1/emp", employeeRoutes);
 
-// React Frontend (if needed in the future)
-// Uncomment these lines if you want the backend to serve the React frontend
-// app.use(express.static(path.join(__dirname, "../frontend/build")));
-// app.get("*", (req, res) => {
-//   res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
-// });
-
 app.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.url}`);
   next();
