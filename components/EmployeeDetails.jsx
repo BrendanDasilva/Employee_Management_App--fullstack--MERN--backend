@@ -1,22 +1,43 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import apiClient from "../axiosConfig";
 
 const EmployeeDetails = ({ employeeId }) => {
   const [employee, setEmployee] = useState(null);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
         const response = await apiClient.get(`/emp/employees/${employeeId}`);
+        setEmployee(response.data);
+        setMessage("");
       } catch (error) {
-        console.log("Error fetching employee details", error);
+        setMessage("Error fetching employee details. Please try again.");
+        setMessageType("error");
       }
     };
     fetchEmployee();
   }, [employeeId]);
+
+  if (message) {
+    return (
+      <div
+        className={`message ${messageType}`}
+        style={{
+          color: messageType === "error" ? "red" : "black",
+          marginBottom: "1rem",
+        }}
+      >
+        {message}
+      </div>
+    );
+  }
+
   if (!employee) {
     return <div>Loading...</div>;
   }
+
   return (
     <div>
       <h1>Employee Details</h1>
