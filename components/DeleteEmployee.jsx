@@ -1,38 +1,31 @@
-import React, { useState } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import apiClient from "../axiosConfig";
 
 const DeleteEmployee = ({ employeeId, onDelete }) => {
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState(""); // "success" or "error"
+  const navigate = useNavigate();
 
   const handleDelete = async () => {
     try {
       await apiClient.delete("/emp/employees", { params: { eid: employeeId } });
-      setMessage("Employee deleted successfully.");
-      setMessageType("success");
       onDelete(employeeId);
+      navigate("/employee-list", {
+        state: {
+          message: "Employee deleted successfully!",
+          messageType: "success",
+        },
+      });
     } catch (error) {
-      setMessage("Error deleting employee. Please try again.");
-      setMessageType("error");
+      navigate("/employee-list", {
+        state: {
+          message: "Error deleting employee. Please try again.",
+          messageType: "error",
+        },
+      });
     }
   };
 
-  return (
-    <div>
-      {message && (
-        <div
-          className={`message ${messageType}`}
-          style={{
-            color: messageType === "success" ? "green" : "red",
-            marginBottom: "1rem",
-          }}
-        >
-          {message}
-        </div>
-      )}
-      <button onClick={handleDelete}>Delete</button>
-    </div>
-  );
+  return <button onClick={handleDelete}>Delete</button>;
 };
 
 export default DeleteEmployee;
